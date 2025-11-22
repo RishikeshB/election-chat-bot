@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Send, Sparkles, User, Bot } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Message {
@@ -64,22 +63,53 @@ const ChatInterface = ({
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke("persona-chat", {
-        body: {
-          messages: [...messages, userMessage],
-          candidateName,
-          candidateParty,
-          candidateDescription,
-          constituencyName,
-        },
-      });
+      const response = await fetch(
+        "https://84c1rl6p-8000.inc1.devtunnels.ms/api/chat",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            "profile": {
+              "demographics": {
+                "age": "34",
+                "gender": "M",
+                "location": "Gandhi St, Coimbatore, AC112",
+                "family_status": "Father of Gopal"
+              },
+              "political_identity": {
+                "party_member": "TRUE (Renewed: TRUE)",
+                "constituency_history": "District: Coimbatore. Winner: Unknown (Unknown)",
+                "engagement_level": "High"
+              },
+              "digital_behavior": {
+                "content_preferences": "Interested in Literacy Mission campaigns, hashtags: #karur",
+                "engagement_patterns": "Active volunteer. Likes: 35, Retweets: 3",
+                "emotional_tendencies": "High engagement, likely positive sentiment"
+              },
+              "geographic_context": {
+                "booth_number": "22",
+                "constituency": "AC112 - 112",
+                "local_issues": "Inferred from Coimbatore context"
+              }
+            },
+            "question": `${messageText}`
+          }),
+        }
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error("HTTP error " + response.status);
+      }
+
+      const data = await response.json();
 
       const assistantMessage: Message = {
         role: "assistant",
         content: data.response,
       };
+
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error: any) {
       console.error("Chat error:", error);
@@ -92,6 +122,7 @@ const ChatInterface = ({
       setIsLoading(false);
     }
   };
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,9 +175,8 @@ const ChatInterface = ({
             {messages.map((message, index) => (
               <div
                 key={index}
-                className={`flex gap-3 animate-fade-in ${
-                  message.role === "user" ? "justify-end" : "justify-start"
-                }`}
+                className={`flex gap-3 animate-fade-in ${message.role === "user" ? "justify-end" : "justify-start"
+                  }`}
               >
                 {message.role === "assistant" && (
                   <Avatar className="h-8 w-8">
@@ -156,11 +186,10 @@ const ChatInterface = ({
                   </Avatar>
                 )}
                 <div
-                  className={`max-w-[70%] rounded-2xl px-4 py-3 ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-secondary-foreground"
-                  }`}
+                  className={`max-w-[70%] rounded-2xl px-4 py-3 ${message.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground"
+                    }`}
                 >
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                 </div>

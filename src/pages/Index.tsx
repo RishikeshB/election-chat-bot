@@ -24,11 +24,33 @@ const Index = () => {
   const [step, setStep] = useState<Step>("constituency");
   const [selectedConstituency, setSelectedConstituency] = useState<Constituency | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const fetchCandidatesByConstituency = async (constituencyName: string) => {
+    try {
+      const response = await fetch("https://84c1rl6p-8000.inc1.devtunnels.ms/persona/query", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ constituency: constituencyName }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data; // expect: { candidates: [...] }
+    } catch (err: any) {
+      console.error("Failed to fetch candidates:", err);
+      throw err;
+    }
+  };
 
   const handleConstituencySelect = (constituency: Constituency) => {
     setSelectedConstituency(constituency);
     setStep("candidate");
   };
+
 
   const handleCandidateSelect = (candidate: Candidate) => {
     setSelectedCandidate(candidate);
